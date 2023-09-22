@@ -3,7 +3,7 @@
 #include <string.h>
 
 int main() {
-    char option, option2;
+    char option;
     char input_str[20];
     char num1_str[20];
     char num2_str[20];
@@ -62,7 +62,7 @@ int main() {
                     write(1, "5. Volver al menú principal\n", sizeof("5. Volver al menú principal\n"));
 
                     // Leer la opción del usuario
-                    ssize_t sub_option_bytes_read = read(0, &option2, sizeof(option2));
+                    ssize_t sub_option_bytes_read = read(0, &option, sizeof(option));
                     if (sub_option_bytes_read < 0) {
                         perror("Error al leer la opción");
                         return 1;
