@@ -2,31 +2,38 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 int main() {
-    const char *fifo_name = "myfifo"; // Nombre del tubo con nombre
-    int fd;
-    char buffer[1024];
+    char mensaje[256];
+    mkfifo("chat2", 0666);
+    int fd1 = open("chat", O_RDONLY); //abre el archivo con read para leer al chat1
+    int fd2 = open("chat2", O_WRONLY); //abre el archivo con write
 
-    // Abrir el tubo con nombre para lectura
-    fd = open(fifo_name, O_RDONLY);
+    printf("Chat iniciado (escriba 'adios' para salir):\n");
 
-    if (fd == -1) {
-        perror("Error al abrir el tubo con nombre para lectura");
-        exit(EXIT_FAILURE);
+    while (1) {
+        read(fd1, mensaje, sizeof(mensaje));
+        printf("Mensaje recibido: %s", mensaje);
+
+        // Comprueba si el mensaje recibido es "adios"
+        if (strcmp(mensaje, "adios\n") == 0) {
+            printf("Receiver: Adios, el chat ha finalizado.\n");
+            break; // Salir del bucle si se recibe "adios"
+        }
+
+        printf("Receiver: ");
+        fgets(mensaje, sizeof(mensaje), stdin);
+        
+        write(fd2, mensaje, sizeof(mensaje));
     }
 
-    // Leer datos del tubo con nombre
-    ssize_t bytes_read = read(fd, buffer, sizeof(buffer));
+    close(fd1);
+    close(fd2);
+    unlink("chat"); // Eliminar el FIFO cuando se cierra
+    unlink("chat2"); // Eliminar el FIFO cuando se cierra
 
-    if (bytes_read == -1) {
-        perror("Error al leer del tubo con nombre");
-        exit(EXIT_FAILURE);
-    }
-
-    printf("Mensaje recibido del programa escritor: %s\n", buffer);
-
-    close(fd);
-
-    return 0;
+    return EXIT_SUCCESS;
 }
