@@ -61,9 +61,10 @@ int main() {
             buffer[bytes_received] = '\0';
             printf("Cliente dice: %s", buffer);
 
-            // Enviar una respuesta al cliente (opcional)
-            const char *response = "Hola, cliente!";
-            send(client_socket, response, strlen(response), 0);
+            // Permite al servidor responder al cliente.
+            printf("Escribe una respuesta al cliente: ");
+            fgets(buffer, sizeof(buffer), stdin);
+            send(client_socket, buffer, strlen(buffer), 0);
         }
     }
 

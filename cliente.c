@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
         // Enviar el mensaje al servidor
         send(client_socket, message, strlen(message), 0);
 
-        // Recibir respuesta del servidor (opcional)
+        // Recibir respuesta del servidor
         char buffer[1024];
         int bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
         if (bytes_received == -1) {
@@ -63,6 +63,11 @@ int main(int argc, char *argv[]) {
         } else {
             buffer[bytes_received] = '\0';
             printf("Servidor dice: %s", buffer);
+
+            // Ahora, permitimos al cliente responder al servidor.
+            printf("Escribe una respuesta al servidor: ");
+            fgets(message, sizeof(message), stdin);
+            send(client_socket, message, strlen(message), 0);
         }
     }
 
