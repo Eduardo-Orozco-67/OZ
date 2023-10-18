@@ -3,9 +3,38 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 
 #define PORT 3550   /* El puerto que será abierto */
-#define BACKLOG 2   /* El número de conexiones permitidas */
+#define BACKLOG 5   /* El número de conexiones permitidas */
+
+void *client_handler(void *arg) {
+    int client_socket = *((int *)arg);
+    free(arg); // Liberar la memoria del argumento
+
+    char buffer[1024];
+    while (1) {
+        int bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
+        if (bytes_received == -1) {
+            perror("Error al recibir datos");
+            break;
+        } else if (bytes_received == 0) {
+            printf("Cliente desconectado.\n");
+            break;
+        } else {
+            buffer[bytes_received] = '\0';
+            printf("Cliente dice: %s", buffer);
+
+            // Permite al servidor responder al cliente.
+            printf("Escribe una respuesta al cliente: ");
+            fgets(buffer, sizeof(buffer), stdin);
+            send(client_socket, buffer, strlen(buffer), 0);
+        }
+    }
+
+    close(client_socket);
+    pthread_exit(NULL);
+}
 
 int main() {
     // Crear el socket del servidor
@@ -37,39 +66,25 @@ int main() {
 
     printf("Servidor esperando conexiones en el puerto %d...\n", PORT);
 
-    // Aceptar una conexión entrante
-    int client_socket = accept(server_socket, NULL, NULL);
-    if (client_socket == -1) {
-        perror("Error al aceptar la conexión entrante");
-        close(server_socket);
-        exit(EXIT_FAILURE);
-    }
-
-    printf("Cliente conectado. Esperando datos...\n");
-
-    // Manejar la comunicación con el cliente
-    char buffer[1024];
     while (1) {
-        int bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
-        if (bytes_received == -1) {
-            perror("Error al recibir datos");
-            break;
-        } else if (bytes_received == 0) {
-            printf("Cliente desconectado.\n");
-            break;
-        } else {
-            buffer[bytes_received] = '\0';
-            printf("Cliente dice: %s", buffer);
+        int *client_socket = malloc(sizeof(int));
+        *client_socket = accept(server_socket, NULL, NULL);
+        if (*client_socket == -1) {
+            perror("Error al aceptar la conexión entrante");
+            free(client_socket);
+            continue;
+        }
 
-            // Permite al servidor responder al cliente.
-            printf("Escribe una respuesta al cliente: ");
-            fgets(buffer, sizeof(buffer), stdin);
-            send(client_socket, buffer, strlen(buffer), 0);
+        printf("Cliente conectado. Esperando datos...\n");
+
+        pthread_t tid;
+        if (pthread_create(&tid, NULL, client_handler, client_socket) != 0) {
+            perror("Error al crear un hilo para el cliente");
+            free(client_socket);
+            continue;
         }
     }
 
-    // Cerrar los sockets
-    close(client_socket);
     close(server_socket);
 
     return 0;
